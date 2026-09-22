@@ -296,7 +296,11 @@ export class DecisionProviderHost {
       if (controller.signal.reason instanceof DecisionConsumerClosedError) {
         throw controller.signal.reason;
       }
-      if (this.retired || controller.signal.reason === "decision-provider-retired") {
+      if (
+        this.retired ||
+        instance.owner?.revoked ||
+        controller.signal.reason === "decision-provider-retired"
+      ) {
         return this.unavailable("retiring");
       }
       if (
