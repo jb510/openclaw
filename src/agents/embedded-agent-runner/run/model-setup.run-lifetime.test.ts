@@ -100,7 +100,7 @@ describe("before_model_resolve run lifetime", () => {
       const fixture = await createFixture();
       const runId = `model-lifetime-${randomUUID()}`;
       const initialAdmission = prepareSystemAgentRunAdmission(
-        fixture.runParams.config,
+        fixture.config,
         runId,
         "main",
         "model-resolution-test",
@@ -108,7 +108,7 @@ describe("before_model_resolve run lifetime", () => {
       const arrivingAdmission =
         ownerChange === "is replaced" || ownerChange === "foreign owner appears"
           ? prepareSystemAgentRunAdmission(
-              fixture.runParams.config,
+              fixture.config,
               runId,
               "main",
               "model-resolution-arriving-owner-test",
@@ -157,7 +157,7 @@ describe("before_model_resolve run lifetime", () => {
       const runId = `model-lifetime-replacement-${randomUUID()}`;
       let previousSourceActive = true;
       const previousAdmission = prepareSystemAgentRunAdmission(
-        fixture.runParams.config,
+        fixture.config,
         runId,
         "main",
         "model-resolution-previous-test",
@@ -168,7 +168,7 @@ describe("before_model_resolve run lifetime", () => {
         },
       );
       const incomingAdmission = prepareSystemAgentRunAdmission(
-        fixture.runParams.config,
+        fixture.config,
         runId,
         "main",
         "model-resolution-incoming-test",

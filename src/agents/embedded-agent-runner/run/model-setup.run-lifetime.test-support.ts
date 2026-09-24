@@ -97,5 +97,5 @@ export async function createModelSetupLifetimeFixture(params?: {
       preparedModelRuntime: generation.preparedModelRuntime,
     });
 
-  return { state, generation, runParams, resolve };
+  return { state, generation, runParams, config, resolve };
 }
