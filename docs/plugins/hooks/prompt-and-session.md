@@ -65,6 +65,14 @@ Use the phase-specific hooks for new plugins:
   `prependContext` or `appendContext`. Intended for background monitors that
   need to summarize current state without changing user-initiated turns.
 
+`before_model_resolve` may also return `thinkingOverride` to select a canonical
+thinking level for this run. A concrete thinking choice supplied for the
+current turn, including a request to restore the default, takes precedence;
+otherwise the hook choice takes precedence over the stored or configured
+default. OpenClaw validates the hook choice against
+the selected model and runtime. The hook choice applies only to this run and
+does not update session thinking state.
+
 On the embedded and CLI prompt-preparation paths, ordering is: drain queued
 injections → `agent_turn_prepare` → heartbeat contribution (if applicable) →
 ordinary `before_prompt_build` → finalized tool policy → authorized prompt

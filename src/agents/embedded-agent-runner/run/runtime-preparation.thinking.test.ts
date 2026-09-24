@@ -254,4 +254,57 @@ describe("selected route thinking metadata at runtime preparation", () => {
       runtime.stopRuntimeAuthRefreshTimer();
     }
   });
+
+  it("uses hook thinking for this run unless the current turn supplied a level", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => {
+        throw new Error("unexpected network request");
+      }),
+    );
+    const hookRunner = {
+      hasHooks: () => true,
+      runBeforeModelResolve: async () => ({ thinkingOverride: "high" as const }),
+    };
+    const prepareRuntime = (runId: string, thinkLevelExplicit = false) =>
+      prepareEmbeddedRunRuntime({
+        assertCurrent: () => {},
+        runParams: {
+          runId,
+          admittedRunContext: createTestAdmittedRunContext(runId),
+          sessionId: `session-${runId}`,
+          sessionKey: `agent:main:${runId}`,
+          agentId: "main",
+          prompt: "Reply briefly.",
+          workspaceDir: root,
+          timeoutMs: 5_000,
+          config: preparedModelRuntime.config,
+          authProfileId: "openai:platform",
+          authProfileIdSource: "user",
+          thinkLevel: "medium",
+          thinkLevelExplicit,
+        },
+        provider: "openai",
+        modelId: MODEL_ID,
+        agentDir: preparedModelRuntime.agentDir,
+        workspaceDir: root,
+        globalLane: "test",
+        hookRunner,
+        hookContext: { sessionId: `session-${runId}`, workspaceDir: root },
+        markStartupStage: () => {},
+        notifyExecutionPhase: () => {},
+        fallbackConfigured: false,
+        preparedModelRuntime,
+      });
+
+    const hookSelected = await prepareRuntime("hook-thinking");
+    const explicitSelected = await prepareRuntime("explicit-thinking", true);
+    try {
+      expect(hookSelected.snapshot().thinkLevel).toBe("high");
+      expect(explicitSelected.snapshot().thinkLevel).toBe("medium");
+    } finally {
+      hookSelected.stopRuntimeAuthRefreshTimer();
+      explicitSelected.stopRuntimeAuthRefreshTimer();
+    }
+  });
 });

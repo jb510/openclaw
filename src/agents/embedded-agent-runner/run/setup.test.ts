@@ -168,6 +168,7 @@ describe("resolveHookModelSelection", () => {
       runBeforeModelResolve: vi.fn(async () => ({
         providerOverride: "vision-provider",
         modelOverride: "vision-model",
+        thinkingOverride: "high",
       })),
     };
 
@@ -186,6 +187,24 @@ describe("resolveHookModelSelection", () => {
     );
     expect(result.provider).toBe("vision-provider");
     expect(result.modelId).toBe("vision-model");
+    expect(result.thinkingOverride).toBe("high");
+  });
+
+  it("ignores invalid runtime thinking values from a plugin hook", async () => {
+    const hookRunner = {
+      hasHooks: vi.fn((hookName: string) => hookName === "before_model_resolve"),
+      runBeforeModelResolve: vi.fn(async () => ({ thinkingOverride: "extreme" as never })),
+    };
+
+    const result = await resolveHookModelSelection({
+      prompt: "text only",
+      provider: "default-provider",
+      modelId: "default-model",
+      hookRunner,
+      hookContext,
+    });
+
+    expect(result).not.toHaveProperty("thinkingOverride");
   });
 
   it("omits the attachments key for text-only before_model_resolve hooks", async () => {

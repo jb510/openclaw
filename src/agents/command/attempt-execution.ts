@@ -101,12 +101,7 @@ import {
 } from "../subagents/announce/subagent-announce-handoff.js";
 import { isRuntimeToolAllowed, isToolAllowedByPolicies } from "../tool-policy-match.js";
 import { DEFAULT_MAX_LIVE_TOOL_RESULT_CHARS } from "../tool-result-limits.js";
-import {
-  buildClaudeCliFallbackContextPrelude,
-  claudeCliSessionTranscriptHasContent,
-  resolveFallbackRetryPrompt,
-  rebaseExecApprovalContinuationPromptRange,
-} from "./attempt-execution.helpers.js";
+import * as attemptExecutionHelpers from "./attempt-execution.helpers.js";
 import { resolveAgentRunContext } from "./run-context.js";
 import {
   consumeCliSessionForkInStore,
@@ -390,11 +385,11 @@ export function runAgentAttempt(params: {
     params.isFallbackRetry &&
     isClaudeCliProvider(params.originalProvider) &&
     !isClaudeCliProvider(params.providerOverride)
-      ? buildClaudeCliFallbackContextPrelude({
+      ? attemptExecutionHelpers.buildClaudeCliFallbackContextPrelude({
           cliSessionId: getCliSessionBinding(params.sessionEntry, "claude-cli")?.sessionId,
         })
       : "";
-  const resolvedPrompt = resolveFallbackRetryPrompt({
+  const resolvedPrompt = attemptExecutionHelpers.resolveFallbackRetryPrompt({
     body: params.body,
     isFallbackRetry: params.isFallbackRetry,
     sessionHasHistory: params.sessionHasHistory,
@@ -403,11 +398,12 @@ export function runAgentAttempt(params: {
   const effectivePrompt = isRawModelRun
     ? resolvedPrompt
     : annotateInterSessionPromptText(resolvedPrompt, params.opts.inputProvenance);
-  const embeddedExecApprovalContinuationPromptRange = rebaseExecApprovalContinuationPromptRange({
-    body: params.body,
-    prompt: effectivePrompt,
-    range: params.opts.execApprovalContinuationPromptRange,
-  });
+  const embeddedExecApprovalContinuationPromptRange =
+    attemptExecutionHelpers.rebaseExecApprovalContinuationPromptRange({
+      body: params.body,
+      prompt: effectivePrompt,
+      range: params.opts.execApprovalContinuationPromptRange,
+    });
   const continuationTranscriptBody = params.opts.execApprovalContinuationPromptRange
     ? (params.transcriptBody ?? params.body)
     : params.transcriptBody;
@@ -597,7 +593,10 @@ export function runAgentAttempt(params: {
       modelHasVision: params.modelHasVision,
       model: params.modelOverride,
       modelRoutingProvenance: params.modelRoutingProvenance,
-      thinkLevel: params.resolvedThinkLevel,
+      ...attemptExecutionHelpers.resolveAttemptThinkingParams(
+        params.resolvedThinkLevel,
+        params.opts,
+      ),
       fastMode: params.fastMode,
       fastModeStartedAtMs: params.fastModeStartedAtMs,
       fastModeAutoOnSeconds: params.fastModeAutoOnSeconds,
@@ -672,7 +671,7 @@ export function runAgentAttempt(params: {
             })
           : params.body;
         const cliResolvedPrompt = params.opts.execApprovalContinuationPromptRange
-          ? resolveFallbackRetryPrompt({
+          ? attemptExecutionHelpers.resolveFallbackRetryPrompt({
               body: cliContinuationBody,
               isFallbackRetry: params.isFallbackRetry,
               sessionHasHistory: params.sessionHasHistory,
@@ -725,7 +724,7 @@ export function runAgentAttempt(params: {
             !isClaudeCliProvider(cliExecutionProvider) ||
             !cliSessionBinding?.sessionId ||
             hasManagedClaudeLiveSession ||
-            (await claudeCliSessionTranscriptHasContent({
+            (await attemptExecutionHelpers.claudeCliSessionTranscriptHasContent({
               sessionId: cliSessionBinding.sessionId,
               workspaceDir: cliProcessCwd,
             }))

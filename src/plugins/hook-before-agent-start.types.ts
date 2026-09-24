@@ -1,3 +1,5 @@
+import type { ThinkLevel } from "../auto-reply/thinking.shared.js";
+
 // before_model_resolve hook
 export type PluginHookBeforeModelResolveAttachment = {
   kind: "image" | "video" | "audio" | "document" | "other";
@@ -16,6 +18,8 @@ export type PluginHookBeforeModelResolveResult = {
   modelOverride?: string;
   /** Override the provider for this agent run. E.g. "local-provider" */
   providerOverride?: string;
+  /** Override the thinking effort for this run only; explicit current-turn directives take precedence. */
+  thinkingOverride?: ThinkLevel;
 };
 
 // before_prompt_build hook
