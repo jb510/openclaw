@@ -168,7 +168,7 @@ describe("resolveHookModelSelection", () => {
       runBeforeModelResolve: vi.fn(async () => ({
         providerOverride: "vision-provider",
         modelOverride: "vision-model",
-        thinkingOverride: "high",
+        thinkingOverride: "high" as const,
       })),
     };
 
