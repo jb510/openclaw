@@ -7,7 +7,7 @@ env:
 permissions:
   contents: read
 concurrency:
-  group: pr136454-revision-proof
+  group: pr136454-revision-proof-node24
   cancel-in-progress: false
 jobs:
   proof:
