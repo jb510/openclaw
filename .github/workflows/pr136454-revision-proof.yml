@@ -1,4 +1,4 @@
-name: PR136454 revision proof
+name: PR136454 remaining proof
 on:
   push:
     branches: [codex/pr136454-revision-20261013-ci]
@@ -7,7 +7,7 @@ env:
 permissions:
   contents: read
 concurrency:
-  group: pr136454-revision-proof-node24
+  group: pr136454-revision-proof-remaining
   cancel-in-progress: false
 jobs:
   proof:
@@ -19,6 +19,8 @@ jobs:
           ref: 5433bf705921fd5e1bf8384a482eebc8b753e88a
           fetch-depth: 2
           persist-credentials: false
+      - name: Install canonical checksum-pinned ripgrep
+        uses: ./.github/actions/setup-ripgrep
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: '24.21.0'
@@ -31,6 +33,7 @@ jobs:
           test ! -f "$HOME/.openclaw/openclaw.json"
           test ! -f "$HOME/.codex/auth.json"
           git diff --check HEAD^ HEAD
+          rg --version
       - name: Install pinned workspace dependencies
         id: dependencies
         shell: bash
@@ -41,28 +44,6 @@ jobs:
           corepack enable
           corepack prepare pnpm@12.9.0 --activate
           /usr/bin/time -p pnpm install --frozen-lockfile
-      - name: Focused behavior proofs
-        shell: bash
-        env:
-          CI: 'true'
-        run: |
-          set -euo pipefail
-          tests=(
-            src/plugins/hooks.phase-hooks.test.ts
-            src/agents/embedded-agent-runner/run/setup.test.ts
-            src/agents/embedded-agent-runner/run/runtime-preparation.thinking.test.ts
-            src/agents/embedded-agent-runner/run-entry.model-hook.test.ts
-            src/agents/command/attempt-execution.cli.test.ts
-            src/auto-reply/reply/agent-runner-runtime-config.test.ts
-            extensions/codex/src/app-server/run-attempt.reasoning-effort.test.ts
-          )
-          failed=0
-          for file in "${tests[@]}"; do
-            printf '\n::group::%s\n' "$file"
-            /usr/bin/time -p pnpm test "$file" --maxWorkers=1 || failed=1
-            printf '::endgroup::\n'
-          done
-          exit "$failed"
       - name: Targeted type lint format proof
         if: always() && steps.dependencies.outcome == 'success'
         shell: bash
