@@ -1,0 +1,78 @@
+name: PR136454 revision proof
+on:
+  push:
+    branches: [codex/pr136454-revision-20261013-ci]
+permissions:
+  contents: read
+concurrency:
+  group: pr136454-revision-proof
+  cancel-in-progress: false
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 5433bf705921fd5e1bf8384a482eebc8b753e88a
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.21.0'
+      - name: Verify exact candidate and isolated inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 5433bf705921fd5e1bf8384a482eebc8b753e88a
+          test "$(git rev-parse HEAD^)" = fb498cc57a46a1624c7afb910557fd4f02308945
+          test ! -f "$HOME/.openclaw/openclaw.json"
+          test ! -f "$HOME/.codex/auth.json"
+          git diff --check HEAD^ HEAD
+      - name: Install pinned workspace dependencies
+        id: dependencies
+        shell: bash
+        env:
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@12.9.0 --activate
+          /usr/bin/time -p pnpm install --frozen-lockfile
+      - name: Focused behavior proofs
+        shell: bash
+        env:
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          tests=(
+            src/plugins/hooks.phase-hooks.test.ts
+            src/agents/embedded-agent-runner/run/setup.test.ts
+            src/agents/embedded-agent-runner/run/runtime-preparation.thinking.test.ts
+            src/agents/embedded-agent-runner/run-entry.model-hook.test.ts
+            src/agents/command/attempt-execution.cli.test.ts
+            src/auto-reply/reply/agent-runner-runtime-config.test.ts
+            extensions/codex/src/app-server/run-attempt.reasoning-effort.test.ts
+          )
+          failed=0
+          for file in "${tests[@]}"; do
+            printf '\n::group::%s\n' "$file"
+            /usr/bin/time -p pnpm test "$file" --maxWorkers=1 || failed=1
+            printf '::endgroup::\n'
+          done
+          exit "$failed"
+      - name: Targeted type lint format proof
+        if: always() && steps.dependencies.outcome == 'success'
+        shell: bash
+        env:
+          CI: 'true'
+        run: |
+          set -euo pipefail
+          pnpm check:changed --dry-run --base fb498cc57a46a1624c7afb910557fd4f02308945
+          /usr/bin/time -p pnpm check:changed --base fb498cc57a46a1624c7afb910557fd4f02308945
+      - name: Build runtime and plugin boundaries
+        if: always() && steps.dependencies.outcome == 'success'
+        shell: bash
+        env:
+          CI: 'true'
+        run: /usr/bin/time -p pnpm build
