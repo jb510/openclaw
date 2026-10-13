@@ -1111,6 +1111,7 @@ export function createHookRunner(
         // Keep the first defined override so higher-priority hooks win, including [].
         modelOverride: acc?.modelOverride ?? next.modelOverride,
         providerOverride: acc?.providerOverride ?? next.providerOverride,
+        thinkingOverride: acc?.thinkingOverride ?? next.thinkingOverride,
         fallbacksOverride: acc?.fallbacksOverride ?? normalizeHookList(next.fallbacksOverride),
       }),
     }),

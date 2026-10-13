@@ -14,8 +14,15 @@ plugin-owned session state. Part of the [Plugin hooks](/plugins/hooks) guide.
 
 ## Debug runtime hooks
 
-Use `before_model_resolve` to switch provider or model for an agent turn - it
-runs before model resolution. `llm_output` describes an attempt's output when
+Use `before_model_resolve` to switch provider, model, or thinking level for an
+agent turn - it runs before model resolution. A returned `thinkingOverride`
+applies only to the current turn and does not change stored session thinking.
+An explicit thinking choice in the current user message, including
+`/think default`, takes precedence. Otherwise the hook choice takes precedence
+over stored session thinking and configured defaults. OpenClaw validates it
+against the final selected model and runtime.
+Existing model-selection locks continue to bypass this hook entirely.
+`llm_output` describes an attempt's output when
 the runtime emits it; `assistantTexts` can be empty and `lastAssistant` absent,
 so the event alone does not prove a successful final answer.
 
@@ -29,7 +36,8 @@ provider payloads, start the Gateway with `--raw-stream` and
 Use the phase-specific hooks for new plugins:
 
 - `before_model_resolve`: receives only the current prompt and attachment
-  metadata. Return `providerOverride`, `modelOverride`, or `fallbacksOverride`.
+  metadata. Return `providerOverride`, `modelOverride`, the typed turn-local
+  `thinkingOverride`, or `fallbacksOverride`.
   When provided, `fallbacksOverride` replaces the fallback chain for this run;
   `[]` disables model fallback, so a failed primary fails the run. A value that
   is not an array of strings is treated as `[]`. Omit it to preserve configured
@@ -74,8 +82,9 @@ ACPX, Agents API, Codex, and Copilot), ordering is: drain queued injections →
 `agent_turn_prepare` → heartbeat contribution (if applicable) → ordinary
 `before_prompt_build` → finalized tool policy → authorized prompt enrichment.
 
-For multiple registrations, the first defined provider/model/fallback override and
-`systemPrompt` win. Context additions concatenate in priority order, and tool
+For multiple registrations, the first defined `providerOverride`, `modelOverride`,
+`thinkingOverride`, `fallbacksOverride`, and `systemPrompt` win (higher-priority
+hooks run first). Context additions concatenate in priority order, and tool
 restrictions intersect. A nested ordinary `before_prompt_build` dispatch on
 the same runner is skipped while its outer dispatch is active; other hook
 families and independent turns remain available.

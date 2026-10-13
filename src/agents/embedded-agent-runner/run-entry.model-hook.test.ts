@@ -77,6 +77,7 @@ it.each([
       providerOverride: "fixture",
       modelOverride: "local",
       fallbacksOverride: scenario.fallbacksOverride,
+      thinkingOverride: "high" as const,
     }));
     const registry = createEmptyPluginRegistry();
     registry.typedHooks.push({
@@ -87,7 +88,11 @@ it.each([
     });
     setActivePluginRegistry(registry);
     initializeGlobalHookRunner(registry);
-    const attempts: Array<{ model: string; final: boolean | undefined }> = [];
+    const attempts: Array<{
+      model: string;
+      final: boolean | undefined;
+      thinkingOverride: string | undefined;
+    }> = [];
     const capture = createDeferred();
     const captureAwaited = createDeferred();
     const result = runEmbeddedAgentEntry({
@@ -115,7 +120,11 @@ it.each([
       behavior: { kind: "maintenance" },
       sessionOverride: { kind: "preserve" },
       runCandidate: async (provider, model, options) => {
-        attempts.push({ model, final: options.isFinalFallbackAttempt });
+        attempts.push({
+          model,
+          final: options.isFinalFallbackAttempt,
+          thinkingOverride: options.resolvedModelSelection?.thinkingOverride,
+        });
         if (attempts.length === 1) {
           throw new FailoverError("Synthetic local endpoint unavailable", { reason: "timeout" });
         }
@@ -143,6 +152,11 @@ it.each([
       scenario.expected.map((model, index) => ({
         model,
         final: index === scenario.expected.length - 1,
+        thinkingOverride: scenario.locked
+          ? undefined
+          : scenario.fallbacksOverride !== undefined || index === 0
+            ? "high"
+            : undefined,
       })),
     );
     expect(hook).toHaveBeenCalledTimes(scenario.locked ? 0 : 1);

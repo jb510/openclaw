@@ -432,6 +432,7 @@ export async function runAgentAttempt(
       model: params.modelOverride,
       modelRoutingProvenance: params.modelRoutingProvenance,
       thinkLevel: params.resolvedThinkLevel,
+      thinkLevelExplicit: Boolean(params.opts.thinking || params.opts.thinkingOnce),
       fastMode: params.fastMode,
       fastModeStartedAtMs: params.fastModeStartedAtMs,
       fastModeAutoOnSeconds: params.fastModeAutoOnSeconds,

@@ -284,6 +284,22 @@ describe("CLI attempt execution", () => {
     return firstEmbeddedAgentArg(runEmbeddedAgentMock.mock.calls.length - 1);
   }
 
+  it.each([
+    { opts: {}, explicit: false },
+    { opts: { thinking: "high" }, explicit: true },
+    { opts: { thinkingOnce: "low" }, explicit: true },
+    { opts: { thinking: "default" }, explicit: true },
+  ])(
+    "carries current-turn thinking authority into embedded execution: $opts",
+    async ({ opts, explicit }) => {
+      const request = await runOpenClawEmbeddedAttemptForTest({
+        opts,
+        resolvedThinkLevel: "medium",
+      });
+      expect(request).toMatchObject({ thinkLevel: "medium", thinkLevelExplicit: explicit });
+    },
+  );
+
   beforeEach(async () => {
     homeEnvSnapshot = captureEnv(["HOME", "OPENCLAW_STATE_DIR"]);
     setTestEnvValue("OPENCLAW_STATE_DIR", suiteRoot);
