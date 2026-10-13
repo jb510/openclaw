@@ -1,4 +1,4 @@
-name: PR136454 remaining proof
+name: PR136454 documentation proof
 on:
   push:
     branches: [codex/pr136454-revision-20261013-ci]
@@ -7,7 +7,7 @@ env:
 permissions:
   contents: read
 concurrency:
-  group: pr136454-revision-proof-remaining
+  group: pr136454-revision-proof-docs
   cancel-in-progress: false
 jobs:
   proof:
@@ -44,18 +44,14 @@ jobs:
           corepack enable
           corepack prepare pnpm@12.9.0 --activate
           /usr/bin/time -p pnpm install --frozen-lockfile
-      - name: Targeted type lint format proof
+      - name: Changed documentation MDX proof
         if: always() && steps.dependencies.outcome == 'success'
         shell: bash
-        env:
-          CI: 'true'
         run: |
           set -euo pipefail
-          pnpm check:changed --dry-run --base fb498cc57a46a1624c7afb910557fd4f02308945
-          /usr/bin/time -p pnpm check:changed --base fb498cc57a46a1624c7afb910557fd4f02308945
-      - name: Build runtime and plugin boundaries
+          git log -1 --format=%H
+          /usr/bin/time -p node scripts/check-docs-mdx.mjs docs/concepts/agent-loop.md docs/plugins/hooks/prompt-and-session.md docs/plugins/hooks/reference.md
+      - name: Canonical internal documentation links
         if: always() && steps.dependencies.outcome == 'success'
         shell: bash
-        env:
-          CI: 'true'
-        run: /usr/bin/time -p pnpm build
+        run: /usr/bin/time -p pnpm docs:check-links
